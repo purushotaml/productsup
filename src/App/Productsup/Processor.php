@@ -2,7 +2,7 @@
 
 namespace Console\App\Productsup;
 
-use Console\App\Xml\ParseXml;
+use Console\App\Xml\ReadFeed;
 use Console\App\Google\PrepareSpreadSheetData;
 use Console\App\Google\ServiceAccountAuthorization;
 use Console\App\Google\CreateSpreadSheet;
@@ -11,35 +11,34 @@ use Console\App\Google\WriteDataToSpreadSheet;
 
 class Processor
 {
-    protected $parseXmlObj;
+    protected $readXmlObj;
     protected $prepareSpreadSheetDataObj;
-    protected $parsedXmlArray;
+    protected $xmlArray;
+    protected $fileName;
 
     public function __construct($fileName)
     {
-        $this->parseXmlObj = new ParseXml($fileName);
+        $this->fileName = $fileName;
+        $this->readFeedObj = new ReadFeed($fileName);
     }
 
-    public function parseXml()
+    public function execute()
     {
-        $this->parsedXmlArray = $this->parseXmlObj->ParseXmlFile();
+        $this->readFeed();
+        $spreadSheetId = $this->CreateSpreadSheet("Productsup_".date("Ymdhis"));
+        $this->writeDataToSpreadSheet($spreadSheetId, $this->getData());
+        return "https://docs.google.com/spreadsheets/d/".$spreadSheetId;
     }
 
-    public function getParsedXmlArray()
+    public function readFeed()
     {
-        $this->parsedXmlArray = $this->parseXmlObj->ParseXmlFile();
-        return $this->parsedXmlArray;
+        $this->xmlArray = $this->readFeedObj->ReadFeedFile();
     }
 
-    public function PrepareSpreadSheetData()
-    {
-        $this->prepareSpreadSheetDataObj = new PrepareSpreadSheetData($this->getParsedXmlArray());
-        return $this->prepareSpreadSheetDataObj->prepareSpreadSheetDataFromArray();
-    }
-
-    public function CreateGoogleSpreadSheetFromData()
+    protected function CreateSpreadSheet($name)
     {
         if ($this->checkIfAccountAuthorizedToCreateSpreadSheet()) {
+
             //Set Google Client With Credentials
             $serviceAccountAuthorizationObj = new ServiceAccountAuthorization();
             $client = $serviceAccountAuthorizationObj->returnAuthorizedClient();
@@ -53,27 +52,38 @@ class Processor
             $permissionObj = new SetSpreadSheetPermission($client);
             $permissionObj->setWritePermission($spreadSheetId);
 
-            //Write Data to Spreadsheet
-            $writDataToSpreadSheetObj = new WriteDataToSpreadSheet($client);
-            $writDataToSpreadSheetObj->writeData($spreadSheetId, $this->PrepareSpreadSheetData());
-
-            return "https://docs.google.com/spreadsheets/d/".$spreadSheetId;
+            return $spreadSheetId;
         } else {
             return "Problem With Authorization";
         }
     }
+
+    protected function writeDataToSpreadSheet($spreadSheetId, $result)
+    {
+        $serviceAccountAuthorizationObj = new ServiceAccountAuthorization();
+        $client = $serviceAccountAuthorizationObj->returnAuthorizedClient();
+
+        $writDataToSpreadSheetObj = new WriteDataToSpreadSheet($client);
+        $writDataToSpreadSheetObj->writeData($spreadSheetId, $result);
+    }
+
+    public function getXmlArray()
+    {
+        $this->xmlArray = $this->readFeedObj->ReadFeedFile();
+        return $this->xmlArray;
+    }
+
+    public function getData()
+    {
+        $this->prepareSpreadSheetDataObj = new PrepareSpreadSheetData($this->getXmlArray());
+        return $this->prepareSpreadSheetDataObj->prepareSpreadSheetDataFromArray();
+    }
+
 
     protected function checkIfAccountAuthorizedToCreateSpreadSheet()
     {
         $serviceAccountAuthorizationObj = new ServiceAccountAuthorization();
         $authorized = $serviceAccountAuthorizationObj->authorization();
         return ($authorized ? $authorized : 0);
-    }
-
-    public function execute()
-    {
-        $this->parseXml();
-        $this->PrepareSpreadSheetData();
-        return $this->CreateGoogleSpreadSheetFromData();
     }
 }

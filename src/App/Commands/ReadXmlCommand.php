@@ -7,7 +7,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-
 use Console\App\Productsup\Config;
 use Console\App\Productsup\ProductsUpLogger;
 use Console\App\Productsup\Processor;
@@ -63,7 +62,8 @@ class ReadXmlCommand extends Command
             $output->writeln('Error Occured');
             ProductsUpLogger::getInstance()->getLogger()->warning($e->getMessage()."===".$e->getLine());
         }
-
+        unset($output);
+        unset($this->processorObj);
         return 1;
     }
 
@@ -73,7 +73,7 @@ class ReadXmlCommand extends Command
     }
 
     protected function checkFileExists($givenFileName)
-    { 
+    {
         $file_headers = @get_headers($givenFileName);
         $exists = ((!$file_headers || $file_headers[0] == 'HTTP/1.1 404 Not Found') ? false : true);
         return  (file_exists($givenFileName) || $exists);

@@ -28,6 +28,8 @@ class CreateSpreadSheet
         $file->setMimeType('application/vnd.google-apps.spreadsheet');
         $file->setName($this->spreadSheetName);
         $results = $service->files->create($file);
+        unset($service);
+        unset($file);
         return $results;
     }
 }

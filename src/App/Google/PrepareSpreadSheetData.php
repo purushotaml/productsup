@@ -26,8 +26,9 @@ class PrepareSpreadSheetData
             }
 
             array_push($this->spreadSheetContent, $itemData);
+            unset($itemData);
         }
-
+        unset($this->xmlDataInArray);
         return array_merge($this->spreadSheetHeader, $this->spreadSheetContent);
     }
 }

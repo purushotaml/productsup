@@ -5,20 +5,19 @@ namespace Console\App\Xml;
 use Sabre\Xml\Reader;
 use Sabre\Xml\Service;
 
-class ParseXml
+class ReadFeed
 {
-    private $xmlFile;
+    private $feedFile;
 
 
     public function __construct($filePath)
     {
-        $this->xmlFile = $filePath;
+        $this->feedFile = $filePath;
     }
 
-    public function ParseXmlFile()
+    public function ReadFeedFile()
     {
-        //Read
-        $xmlString = file_get_contents($this->xmlFile);
+        $xmlString = file_get_contents($this->feedFile);
         $xmlReader = new Reader();
         $xmlReaderService = new Service();
         $xmlReaderService->elementMap = [
@@ -27,9 +26,9 @@ class ParseXml
             }
         ];
 
-        //Parse
         $xmlStringArray = $xmlReaderService->parse($xmlString);
-
+        unset($xmlReader);
+        unset($xmlReaderService);
         return $xmlStringArray;
     }
 }
